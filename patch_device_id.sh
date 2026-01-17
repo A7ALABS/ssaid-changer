@@ -2,7 +2,7 @@
 set -euo pipefail
 
 #######################################
-# Fetch android id from an existing android os with roblox installed
+# Fetch android id from an existing android os with app installed
 
 # Android 11 or less
 # adb -s 127.0.0.1:5555 shell cat /data/system/users/0/settings_ssaid.xml
@@ -37,7 +37,7 @@ test -f $IN
 # ABX -> XML
 abx2xml $IN $TMP
 
-sed -i '/package=\"com\.domain\.nae\"/ {
+sed -i '/package=\"com\.domain\.name\"/ {
   s/value=\"[^\"]*\"/value=\"'"\"\$VAL\""'\"/;
   s/defaultValue=\"[^\"]*\"/defaultValue=\"'"\"\$VAL\""'\"/;
 }' $TMP
@@ -50,11 +50,11 @@ restorecon $IN 2>/dev/null || true
 sync
 
 # verify (value or defaultValue)
-LINE=\$(abx2xml $IN - | grep 'package=\"com\.roblox\.client\"' || true)
+LINE=\$(abx2xml $IN - | grep 'package=\"com\.domain\.client\"' || true)
 echo \"VERIFY: \$LINE\"
 echo \"\$LINE\" | grep -q \"value=\\\"$SSAID\\\"\" || echo \"\$LINE\" | grep -q \"defaultValue=\\\"$SSAID\\\"\"
 
-# restart roblox
+# restart app
 am force-stop com.domain.name 2>/dev/null || true
 echo OK"
 done
