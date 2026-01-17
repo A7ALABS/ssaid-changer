@@ -25,7 +25,7 @@ TMP="/data/local/tmp/settings_ssaid.xml"
 
 for SERIAL in "${DEVICES[@]}"; do
   echo "========================================"
-  echo "[$SERIAL] Setting Roblox SSAID = $SSAID"
+  echo "[$SERIAL] Setting APP SSAID = $SSAID"
   echo "========================================"
 
   adb -s "$SERIAL" shell su -mm -c "set -e
@@ -37,8 +37,7 @@ test -f $IN
 # ABX -> XML
 abx2xml $IN $TMP
 
-# patch ONLY Roblox row
-sed -i '/package=\"com\.roblox\.client\"/ {
+sed -i '/package=\"com\.domain\.nae\"/ {
   s/value=\"[^\"]*\"/value=\"'"\"\$VAL\""'\"/;
   s/defaultValue=\"[^\"]*\"/defaultValue=\"'"\"\$VAL\""'\"/;
 }' $TMP

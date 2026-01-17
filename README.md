@@ -46,10 +46,12 @@ A one-page Flutter app for rooted Android devices that lets you browse installed
 1. Ensure your device is rooted.
 2. (Android 12+) Install `abx2xml` and `xml2abx` on the device.
 3. Run the app:
+
    ```bash
    flutter pub get
    flutter run
    ```
+
 4. Select an app from the list.
 5. Tap "Refresh SSAID" to read the current value.
 6. Enter a new 16-char hex SSAID or use "Randomize".
@@ -59,6 +61,15 @@ A one-page Flutter app for rooted Android devices that lets you browse installed
 
 - The SSAID entry may not exist until the app is launched at least once.
 - Incorrect edits can break app behavior; proceed carefully.
+
+## Behind the scenes
+
+The app mirrors the workflow in `patch_device_id.sh` for reading and patching
+`/data/system/users/0/settings_ssaid.xml`. On Android 12+ it converts ABX to XML
+with `abx2xml`, updates only the selected package row, then writes back with
+`xml2abx` and restores permissions. On Android 11 and below, the file is plain
+XML and the app edits it directly. This keeps behavior consistent with the
+script while adding a UI for selecting apps and updating SSAIDs.
 
 ## License
 
