@@ -11,6 +11,13 @@ A one-page Flutter app for rooted Android devices that lets you browse installed
 
 ---
 
+## Install and use the app directly
+
+- Download the latest APK from GitHub Releases: <https://github.com/A7ALABS/ssaid-changer/releases>
+- Install it on a rooted Android device (allow unknown sources if needed).
+
+---
+
 ## Features
 
 - List and search installed apps (including system apps).
@@ -19,14 +26,6 @@ A one-page Flutter app for rooted Android devices that lets you browse installed
 - Random SSAID generator.
 - Handles Android 11 and below (plain XML) and Android 12+ (ABX) formats.
 - Clear status messages for missing ABX tools.
-
----
-
-## Install and use the app directly
-
-- Download the latest APK from GitHub Releases.
-- Install it on a rooted Android device (allow unknown sources if needed).
-- Android 12+: ensure `abx2xml` and `xml2abx` are available on-device.
 
 ---
 
