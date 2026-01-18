@@ -2,6 +2,15 @@
 
 A one-page Flutter app for rooted Android devices that lets you browse installed apps, read their SSAID (device ID) from `settings_ssaid.xml`, and update it on demand.
 
+<p align="center">
+  <img src="screenshots/Screenshot%202026-01-18%20at%2012.10.57%E2%80%AFPM.png" width="220" />
+  <img src="screenshots/Screenshot%202026-01-18%20at%2012.12.24%E2%80%AFPM.png" width="220" />
+  <img src="screenshots/Screenshot%202026-01-18%20at%2012.12.41%E2%80%AFPM.png" width="220" />
+  <img src="screenshots/Screenshot%202026-01-18%20at%2012.12.58%E2%80%AFPM.png" width="220" />
+</p>
+
+---
+
 ## Features
 
 - List and search installed apps (including system apps).
@@ -11,12 +20,35 @@ A one-page Flutter app for rooted Android devices that lets you browse installed
 - Handles Android 11 and below (plain XML) and Android 12+ (ABX) formats.
 - Clear status messages for missing ABX tools.
 
-## Requirements
+---
+
+## Install and use the app directly
+
+- Download the latest APK from GitHub Releases.
+- Install it on a rooted Android device (allow unknown sources if needed).
+- Android 12+: ensure `abx2xml` and `xml2abx` are available on-device.
+
+---
+
+## How It Works
+
+- The app reads `/data/system/users/0/settings_ssaid.xml` with root.
+- For Android 12+, it converts ABX to XML using `abx2xml`, patches values, then converts back with `xml2abx`.
+- For Android 11 and below, it edits the XML directly.
+- The SSAID entry is matched by `package="<package-name>"` and updated in-place.
+
+---
+
+## Develop the app on your machine
+
+### Requirements
 
 - Rooted Android device or emulator.
 - Android 11 and below: `settings_ssaid.xml` is plain XML.
 - Android 12+: `abx2xml` and `xml2abx` must be available on-device.
 - Flutter SDK installed on your machine.
+
+---
 
 ## Project Structure
 
@@ -34,14 +66,9 @@ A one-page Flutter app for rooted Android devices that lets you browse installed
 └── README.md
 ```
 
-## How It Works
+---
 
-- The app reads `/data/system/users/0/settings_ssaid.xml` with root.
-- For Android 12+, it converts ABX to XML using `abx2xml`, patches values, then converts back with `xml2abx`.
-- For Android 11 and below, it edits the XML directly.
-- The SSAID entry is matched by `package="<package-name>"` and updated in-place.
-
-## Usage
+### Usage
 
 1. Ensure your device is rooted.
 2. (Android 12+) Install `abx2xml` and `xml2abx` on the device.
@@ -57,10 +84,14 @@ A one-page Flutter app for rooted Android devices that lets you browse installed
 6. Enter a new 16-char hex SSAID or use "Randomize".
 7. Tap "Update SSAID" and restart the target app.
 
+---
+
 ## Notes
 
 - The SSAID entry may not exist until the app is launched at least once.
 - Incorrect edits can break app behavior; proceed carefully.
+
+---
 
 ## Behind the scenes
 
@@ -70,6 +101,8 @@ with `abx2xml`, updates only the selected package row, then writes back with
 `xml2abx` and restores permissions. On Android 11 and below, the file is plain
 XML and the app edits it directly. This keeps behavior consistent with the
 script while adding a UI for selecting apps and updating SSAIDs.
+
+---
 
 ## License
 
