@@ -3,10 +3,11 @@
 A one-page Flutter app for rooted Android devices that lets you browse installed apps, read their SSAID (device ID) from `settings_ssaid.xml`, and update it on demand.
 
 <p align="center">
-  <img src="screenshots/Screenshot%202026-01-18%20at%2012.10.57%E2%80%AFPM.png" width="220" />
-  <img src="screenshots/Screenshot%202026-01-18%20at%2012.12.24%E2%80%AFPM.png" width="220" />
-  <img src="screenshots/Screenshot%202026-01-18%20at%2012.12.41%E2%80%AFPM.png" width="220" />
-  <img src="screenshots/Screenshot%202026-01-18%20at%2012.12.58%E2%80%AFPM.png" width="220" />
+  <img src="screenshots/redroid11_x86_64%201_21_2026%2C%204_30_20%20PM.png" width="220" />
+  <img src="screenshots/redroid11_x86_64%201_21_2026%2C%204_30_55%20PM.png" width="220" />
+  <img src="screenshots/redroid11_x86_64%201_21_2026%2C%204_31_14%20PM.png" width="220" />
+  <img src="screenshots/redroid11_x86_64%201_21_2026%2C%204_31_26%20PM.png" width="220" />
+  <img src="screenshots/redroid11_x86_64%201_21_2026%2C%204_30_41%20PM.png" width="220" />
 </p>
 
 ---
