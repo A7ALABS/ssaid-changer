@@ -104,6 +104,11 @@ script while adding a UI for selecting apps and updating SSAIDs.
 
 ---
 
+## Denial of responsibility
+Anything you do is at your own risk. No one else is responsible for any data loss, corruption, or damage to your device, including that which results from bugs in this software. There is a nonzero chance of any of these events happening due to using the tools or methods here. Always make backups.
+
+---
+
 ## License
 
 MIT
