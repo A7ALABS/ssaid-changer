@@ -1,4 +1,4 @@
-name: Build Flutter APK
+name: Build Android APK
 
 on:
   push:
@@ -19,25 +19,30 @@ jobs:
         with:
           distribution: "temurin"
           java-version: "17"
+          cache: gradle
 
-      - name: Set up Flutter
-        uses: subosito/flutter-action@v2
-        with:
-          flutter-version: "stable"
-          cache: true
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
 
-      - name: Flutter pub get
-        run: flutter pub get
+      - name: Grant execute permission for gradlew
+        run: chmod +x ./gradlew
 
-      - name: Build APK (release)
-        run: flutter build apk --release
+      # Debug APK
+      - name: Build Debug APK
+        run: ./gradlew assembleDebug
 
-      - name: Upload APK artifact
+      - name: Upload Debug APK artifact
         uses: actions/upload-artifact@v4
         with:
-          name: flutter-debug-apk
-          path: build/app/outputs/flutter-apk/*.apk
+          name: app-debug-apk
+          path: app/build/outputs/apk/debug/*.apk
 
-      # Release:
-      # - name: Build APK (release)
-      #   run: flutter build apk --release
+      # If you want release APK instead, comment debug and use:
+      # - name: Build Release APK
+      #   run: ./gradlew assembleRelease
+      #
+      # - name: Upload Release APK artifact
+      #   uses: actions/upload-artifact@v4
+      #   with:
+      #     name: app-release-apk
+      #     path: app/build/outputs/apk/release/*.apk
