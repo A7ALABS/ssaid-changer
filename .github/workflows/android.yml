@@ -1,4 +1,4 @@
-name: Build Android APK
+name: Build APK
 
 on:
   push:
@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
 
 jobs:
-  build-apk:
+  build:
     runs-on: ubuntu-latest
 
     steps:
@@ -24,11 +24,6 @@ jobs:
       - name: Set up Android SDK
         uses: android-actions/setup-android@v3
 
-      # This workflow supports:
-      # 1) Pure Android/Gradle projects (gradlew anywhere in repo)
-      # 2) Flutter projects (android/ exists but gradlew might not be present; builds via flutter)
-      #
-      # It auto-detects gradlew first. If not found, it tries Flutter build.
       - name: Detect build system
         id: detect
         shell: bash
@@ -38,7 +33,6 @@ jobs:
           echo "== Repo top-level =="
           ls -la
 
-          # Find gradlew anywhere (ignore node_modules / build dirs)
           GRADLEW_PATH="$(find . -type f -name "gradlew" \
             -not -path "*/node_modules/*" \
             -not -path "*/build/*" \
@@ -53,19 +47,17 @@ jobs:
             exit 0
           fi
 
-          # If no gradlew, try detecting Flutter
           if [[ -f "pubspec.yaml" ]]; then
             echo "No gradlew found. pubspec.yaml detected -> Flutter project."
             echo "mode=flutter" >> "$GITHUB_OUTPUT"
             exit 0
           fi
 
-          echo "❌ Could not find gradlew anywhere AND pubspec.yaml not found."
-          echo "You likely didn't commit the Gradle wrapper, or your Android project is in a subfolder you didn't include."
-          echo "Fix by committing wrapper files: gradlew, gradlew.bat, gradle/wrapper/*"
+          echo "❌ Could not find gradlew AND pubspec.yaml not found."
+          echo "Commit Gradle wrapper or ensure Flutter project has pubspec.yaml at repo root."
           exit 1
 
-      # ---------- Gradle / Android build ----------
+      # -------------------- ANDROID / GRADLE --------------------
       - name: Build Debug APK (Gradle)
         if: steps.detect.outputs.mode == 'gradle'
         shell: bash
@@ -82,19 +74,12 @@ jobs:
         run: |
           set -euo pipefail
           ROOT="${{ steps.detect.outputs.gradle_dir }}"
-
-          # Search for debug APKs produced by Gradle
           APK_PATHS="$(find "$ROOT" -type f -name "*debug*.apk" -path "*/outputs/apk/*" || true)"
           if [[ -z "$APK_PATHS" ]]; then
             echo "❌ No debug APK found under $ROOT/**/outputs/apk/"
-            echo "Listing outputs for debugging:"
-            find "$ROOT" -maxdepth 6 -type d -path "*outputs*" -print || true
+            find "$ROOT" -maxdepth 7 -type d -path "*outputs*" -print || true
             exit 1
           fi
-
-          echo "Found APK(s):"
-          echo "$APK_PATHS"
-          # Upload all matching APKs
           echo "apk_paths<<EOF" >> "$GITHUB_OUTPUT"
           echo "$APK_PATHS" >> "$GITHUB_OUTPUT"
           echo "EOF" >> "$GITHUB_OUTPUT"
@@ -106,14 +91,15 @@ jobs:
           name: apk-debug-gradle
           path: ${{ steps.apk_gradle.outputs.apk_paths }}
 
-      # ---------- Flutter build ----------
-      - name: Set up Flutter
+      # -------------------- FLUTTER --------------------
+      - name: Set up Flutter (Stable channel)
         if: steps.detect.outputs.mode == 'flutter'
         uses: subosito/flutter-action@v2
         with:
-          flutter-version: stable
+          channel: stable
           cache: true
 
+      # If your Flutter app is in a subfolder (monorepo), set working-directory below
       - name: Flutter pub get
         if: steps.detect.outputs.mode == 'flutter'
         run: flutter pub get
@@ -128,17 +114,12 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-
           APK_PATHS="$(find . -type f -name "*.apk" -path "*/build/app/outputs/flutter-apk/*" || true)"
           if [[ -z "$APK_PATHS" ]]; then
             echo "❌ No Flutter APK found under build/app/outputs/flutter-apk/"
-            echo "Listing build outputs for debugging:"
-            find . -maxdepth 6 -type d -path "*build*" -print || true
+            find . -maxdepth 7 -type d -path "*build*" -print || true
             exit 1
           fi
-
-          echo "Found APK(s):"
-          echo "$APK_PATHS"
           echo "apk_paths<<EOF" >> "$GITHUB_OUTPUT"
           echo "$APK_PATHS" >> "$GITHUB_OUTPUT"
           echo "EOF" >> "$GITHUB_OUTPUT"
