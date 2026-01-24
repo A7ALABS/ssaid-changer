@@ -1,132 +1,84 @@
-name: Build APK
+name: Build & Upload Flutter APK to GitHub Releases
 
 on:
   push:
-    branches: ["main"]
-  pull_request:
+    tags:
+      - "v*"
   workflow_dispatch:
+    inputs:
+      tag:
+        description: "Release tag (e.g. v1.2.3). If empty, will use the current ref name."
+        required: false
+        default: ""
+
+permissions:
+  contents: write
 
 jobs:
-  build:
+  build-and-release:
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Set up JDK 17
+      - name: Set up Java 17
         uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: "17"
-          cache: gradle
 
-      - name: Set up Android SDK
-        uses: android-actions/setup-android@v3
-
-      - name: Detect build system
-        id: detect
-        shell: bash
-        run: |
-          set -euo pipefail
-
-          echo "== Repo top-level =="
-          ls -la
-
-          GRADLEW_PATH="$(find . -type f -name "gradlew" \
-            -not -path "*/node_modules/*" \
-            -not -path "*/build/*" \
-            -not -path "*/.gradle/*" \
-            -print -quit || true)"
-
-          if [[ -n "${GRADLEW_PATH}" ]]; then
-            GRADLE_DIR="$(dirname "${GRADLEW_PATH}")"
-            echo "Found gradlew at: ${GRADLEW_PATH}"
-            echo "gradle_dir=${GRADLE_DIR}" >> "$GITHUB_OUTPUT"
-            echo "mode=gradle" >> "$GITHUB_OUTPUT"
-            exit 0
-          fi
-
-          if [[ -f "pubspec.yaml" ]]; then
-            echo "No gradlew found. pubspec.yaml detected -> Flutter project."
-            echo "mode=flutter" >> "$GITHUB_OUTPUT"
-            exit 0
-          fi
-
-          echo "❌ Could not find gradlew AND pubspec.yaml not found."
-          echo "Commit Gradle wrapper or ensure Flutter project has pubspec.yaml at repo root."
-          exit 1
-
-      # -------------------- ANDROID / GRADLE --------------------
-      - name: Build Debug APK (Gradle)
-        if: steps.detect.outputs.mode == 'gradle'
-        shell: bash
-        run: |
-          set -euo pipefail
-          cd "${{ steps.detect.outputs.gradle_dir }}"
-          chmod +x ./gradlew
-          ./gradlew --no-daemon assembleDebug
-
-      - name: Find APK output (Gradle)
-        if: steps.detect.outputs.mode == 'gradle'
-        id: apk_gradle
-        shell: bash
-        run: |
-          set -euo pipefail
-          ROOT="${{ steps.detect.outputs.gradle_dir }}"
-          APK_PATHS="$(find "$ROOT" -type f -name "*debug*.apk" -path "*/outputs/apk/*" || true)"
-          if [[ -z "$APK_PATHS" ]]; then
-            echo "❌ No debug APK found under $ROOT/**/outputs/apk/"
-            find "$ROOT" -maxdepth 7 -type d -path "*outputs*" -print || true
-            exit 1
-          fi
-          echo "apk_paths<<EOF" >> "$GITHUB_OUTPUT"
-          echo "$APK_PATHS" >> "$GITHUB_OUTPUT"
-          echo "EOF" >> "$GITHUB_OUTPUT"
-
-      - name: Upload APK artifact (Gradle)
-        if: steps.detect.outputs.mode == 'gradle'
-        uses: actions/upload-artifact@v4
-        with:
-          name: apk-debug-gradle
-          path: ${{ steps.apk_gradle.outputs.apk_paths }}
-
-      # -------------------- FLUTTER --------------------
-      - name: Set up Flutter (Stable channel)
-        if: steps.detect.outputs.mode == 'flutter'
+      - name: Set up Flutter (stable)
         uses: subosito/flutter-action@v2
         with:
           channel: stable
           cache: true
 
-      # If your Flutter app is in a subfolder (monorepo), set working-directory below
       - name: Flutter pub get
-        if: steps.detect.outputs.mode == 'flutter'
         run: flutter pub get
 
-      - name: Build Debug APK (Flutter)
-        if: steps.detect.outputs.mode == 'flutter'
-        run: flutter build apk --debug
+      - name: Build release APK
+        run: flutter build apk --release
 
-      - name: Find APK output (Flutter)
-        if: steps.detect.outputs.mode == 'flutter'
-        id: apk_flutter
+      - name: Resolve tag + rename APK
+        id: prep
         shell: bash
         run: |
           set -euo pipefail
-          APK_PATHS="$(find . -type f -name "*.apk" -path "*/build/app/outputs/flutter-apk/*" || true)"
-          if [[ -z "$APK_PATHS" ]]; then
-            echo "❌ No Flutter APK found under build/app/outputs/flutter-apk/"
-            find . -maxdepth 7 -type d -path "*build*" -print || true
+
+          # Prefer workflow_dispatch input tag if provided, else use ref name (tags use GITHUB_REF_NAME).
+          TAG_INPUT="${{ inputs.tag }}"
+          if [[ -n "$TAG_INPUT" ]]; then
+            TAG="$TAG_INPUT"
+          else
+            TAG="${GITHUB_REF_NAME}"
+          fi
+
+          if [[ -z "$TAG" ]]; then
+            echo "❌ Tag could not be resolved. Provide inputs.tag or run on a tag push."
             exit 1
           fi
-          echo "apk_paths<<EOF" >> "$GITHUB_OUTPUT"
-          echo "$APK_PATHS" >> "$GITHUB_OUTPUT"
-          echo "EOF" >> "$GITHUB_OUTPUT"
 
-      - name: Upload APK artifact (Flutter)
-        if: steps.detect.outputs.mode == 'flutter'
-        uses: actions/upload-artifact@v4
+          APK="build/app/outputs/flutter-apk/app-release.apk"
+          if [[ ! -f "$APK" ]]; then
+            echo "❌ APK not found at $APK"
+            echo "Listing flutter-apk output:"
+            ls -la build/app/outputs/flutter-apk || true
+            exit 1
+          fi
+
+          OUT="build/app/outputs/flutter-apk/app-${TAG}-release.apk"
+          cp "$APK" "$OUT"
+
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+          echo "apk=$OUT" >> "$GITHUB_OUTPUT"
+
+      - name: Create Release and upload APK
+        uses: softprops/action-gh-release@v2
         with:
-          name: apk-debug-flutter
-          path: ${{ steps.apk_flutter.outputs.apk_paths }}
+          tag_name: ${{ steps.prep.outputs.tag }}
+          name: ${{ steps.prep.outputs.tag }}
+          generate_release_notes: true
+          files: ${{ steps.prep.outputs.apk }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
